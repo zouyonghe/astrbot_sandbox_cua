@@ -10,7 +10,7 @@ from .tools import CuaKeyboardTypeTool, CuaMouseClickTool, CuaScreenshotTool
 
 
 @register(
-    "astrbot-sandbox-cua",
+    "astrbot_sandbox_cua",
     "AstrBot Team",
     "CUA sandbox runtime provider for AstrBot",
     "0.1.0",

@@ -9,9 +9,6 @@ from typing import Any
 
 from astrbot.api import logger
 from astrbot.core.computer.booters.base import ComputerBooter
-from astrbot.core.computer.booters.shipyard_search_file_util import (
-    search_files_via_shell,
-)
 from astrbot.core.computer.olayer import (
     FileSystemComponent,
     GUIComponent,
@@ -22,6 +19,7 @@ from astrbot.core.computer.olayer import (
 from .cua_defaults import CUA_CONFIG_KEYS, CUA_DEFAULT_CONFIG
 
 _POSIX_OS_TYPES = {"linux", "darwin", "macos"}
+_MAX_SEARCH_LINE_COLUMNS = 1000
 
 _CUA_BACKGROUND_LAUNCHER = """
 import subprocess, sys, time
@@ -562,7 +560,7 @@ class _PosixShellFileSystem(FileSystemComponent):
         search_path = path or "."
         if error := self._ensure_posix(search_path):
             return error
-        return await search_files_via_shell(
+        return await _search_files_via_shell(
             self._shell,
             pattern=pattern,
             path=path,
@@ -584,6 +582,58 @@ async def _list_dir_via_shell(
         "success": not bool(result.get("stderr")),
         "path": path,
         "entries": [line for line in stdout.splitlines() if line.strip()],
+        "error": result.get("stderr", ""),
+    }
+
+
+def _build_search_command(
+    *,
+    pattern: str,
+    path: str,
+    glob: str | None,
+    after_context: int | None,
+    before_context: int | None,
+) -> str:
+    command = [
+        "rg",
+        "--color=never",
+        "-n",
+        "--max-columns",
+        str(_MAX_SEARCH_LINE_COLUMNS),
+        "-e",
+        pattern,
+    ]
+    if glob:
+        command.extend(["-g", glob])
+    if after_context is not None:
+        command.extend(["-A", str(after_context)])
+    if before_context is not None:
+        command.extend(["-B", str(before_context)])
+    command.extend(["--", path])
+    return " ".join(shlex.quote(part) for part in command)
+
+
+async def _search_files_via_shell(
+    shell: ShellComponent,
+    *,
+    pattern: str,
+    path: str | None = None,
+    glob: str | None = None,
+    after_context: int | None = None,
+    before_context: int | None = None,
+) -> dict[str, Any]:
+    search_path = path or "."
+    command = _build_search_command(
+        pattern=pattern,
+        path=search_path,
+        glob=glob,
+        after_context=after_context,
+        before_context=before_context,
+    )
+    result = await shell.exec(command)
+    return {
+        "success": result.get("exit_code", 0) in (0, 1),
+        "content": result.get("stdout", ""),
         "error": result.get("stderr", ""),
     }
 
