@@ -18,18 +18,18 @@ from .tools import CuaKeyboardTypeTool, CuaMouseClickTool, CuaScreenshotTool
 class CuaSandboxRuntimePlugin(Star):
     def __init__(self, context: Context, config=None) -> None:
         super().__init__(context)
-        self.provider = CuaSandboxProvider()
-        self.provider.plugin_config = config or {}
-        register_sandbox_provider(self.provider, replace=True)
-        tool_mgr = context.get_llm_tool_manager()
-        tool_mgr.func_list.append(CuaScreenshotTool())
-        tool_mgr.func_list.append(CuaMouseClickTool())
-        tool_mgr.func_list.append(CuaKeyboardTypeTool())
+        self.provider = CuaSandboxProvider(plugin_config=config)
+        register_sandbox_provider(
+            self.provider,
+            replace=True,
+            tools=[
+                CuaScreenshotTool(),
+                CuaMouseClickTool(),
+                CuaKeyboardTypeTool(),
+            ],
+        )
 
     async def terminate(self) -> None:
-        tool_mgr = self.context.get_llm_tool_manager()
-        for tool_name in self.provider.tool_names:
-            tool_mgr.remove_func(tool_name)
         unregister_sandbox_provider(self.provider.provider_id, force=True)
 
     @filter.command("cua_sandbox_runtime")

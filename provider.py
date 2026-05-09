@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 import time
 import uuid
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
+from typing import Any
 
 from astrbot.api import logger
 from astrbot.core.computer.booters.base import ComputerBooter
@@ -12,12 +13,6 @@ from astrbot.core.star.context import Context
 from .booters import cua as cua_booter
 
 BootHook = Callable[[Context, str, str, dict], Awaitable[ComputerBooter]]
-
-
-async def _sync_skills_to_sandbox(booter: ComputerBooter) -> None:
-    from astrbot.core.computer.computer_client import _sync_skills_to_sandbox as sync
-
-    await sync(booter)
 
 
 class CuaSandboxProvider:
@@ -29,17 +24,33 @@ class CuaSandboxProvider:
         "astrbot_cua_keyboard_type",
     }
 
-    def __init__(self, boot_hook: BootHook | None = None) -> None:
+    def __init__(
+        self,
+        boot_hook: BootHook | None = None,
+        *,
+        plugin_config: Mapping[str, Any] | None = None,
+    ) -> None:
+        self.plugin_config: dict[str, Any] = (
+            dict(plugin_config) if plugin_config is not None else {}
+        )
         self._boot_hook = boot_hook
 
-    def build_create_config(self, context: Context, session_id: str) -> dict:
+    def _merged_sandbox_config(self, context: Context, session_id: str) -> dict:
+        """Return sandbox config with plugin_config as base and user settings overriding."""
         config = context.get_config(umo=session_id)
+        merged = dict(self.plugin_config)
         sandbox_cfg = config.get("provider_settings", {}).get("sandbox", {})
-        plugin_cfg = getattr(self, "plugin_config", None)
-        if plugin_cfg:
-            merged = dict(plugin_cfg)
+        if isinstance(sandbox_cfg, dict):
             merged.update(sandbox_cfg)
-            sandbox_cfg = merged
+        else:
+            logger.warning(
+                "[Computer] Expected dict for provider_settings.sandbox, got %s. Ignoring.",
+                type(sandbox_cfg).__name__,
+            )
+        return merged
+
+    def build_create_config(self, context: Context, session_id: str) -> dict:
+        sandbox_cfg = self._merged_sandbox_config(context, session_id)
         booter_kwargs = cua_booter.build_cua_booter_kwargs(sandbox_cfg)
         if not booter_kwargs.get("api_key") and not os.environ.get("CUA_API_KEY"):
             booter_kwargs["local"] = True
@@ -59,13 +70,8 @@ class CuaSandboxProvider:
         return connect_info
 
     def get_idle_timeout(self, context: Context, session_id: str) -> float:
-        config = context.get_config(umo=session_id)
-        sandbox_cfg = config.get("provider_settings", {}).get("sandbox", {})
-        plugin_cfg = getattr(self, "plugin_config", None)
-        value = sandbox_cfg.get(
-            "cua_idle_timeout",
-            plugin_cfg.get("cua_idle_timeout", 0) if plugin_cfg else 0,
-        )
+        sandbox_cfg = self._merged_sandbox_config(context, session_id)
+        value = sandbox_cfg.get("cua_idle_timeout", 0)
         try:
             timeout = float(value)
         except (TypeError, ValueError):
@@ -97,7 +103,6 @@ class CuaSandboxProvider:
         try:
             await client.boot(uuid_str)
             setattr(client, "sandbox_id", sandbox_id)
-            await _sync_skills_to_sandbox(client)
         except Exception:
             logger.warning(
                 "[Computer] CUA managed sandbox boot failed: sandbox_id=%s session_id=%s elapsed_ms=%d",
