@@ -58,7 +58,7 @@ class CuaScreenshotTool(FunctionTool):
                 "send_to_user": {
                     "type": "boolean",
                     "description": "Whether to send the screenshot image to the current conversation.",
-                    "default": False,
+                    "default": True,
                 },
                 "return_image_to_llm": {
                     "type": "boolean",
