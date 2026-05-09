@@ -1,0 +1,14 @@
+[project]
+name = "astrbot_sandbox_cua"
+version = "0.1.0"
+description = "CUA sandbox runtime provider plugin for AstrBot"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "ruff",
+]
+
+[tool.ruff]
+line-length = 88

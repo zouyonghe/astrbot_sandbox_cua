@@ -1,0 +1,40 @@
+{
+  "cua_image": {
+    "description": "CUA Image",
+    "type": "string",
+    "hint": "CUA sandbox image/system type. Default: linux."
+  },
+  "cua_os_type": {
+    "description": "CUA OS Type",
+    "type": "string",
+    "options": ["linux", "macos", "windows", "android"],
+    "labels": ["Linux", "macOS", "Windows", "Android"],
+    "hint": "CUA sandbox operating system type. Default: linux."
+  },
+  "cua_ttl": {
+    "description": "CUA Sandbox TTL",
+    "type": "int",
+    "hint": "CUA sandbox lifetime in seconds."
+  },
+  "cua_idle_timeout": {
+    "description": "CUA Idle Timeout",
+    "type": "int",
+    "hint": "Seconds before an idle managed CUA sandbox is cleaned up. 0 disables idle cleanup."
+  },
+  "cua_telemetry_enabled": {
+    "description": "CUA Telemetry",
+    "type": "bool",
+    "hint": "Allow the CUA SDK to send telemetry. Default: false."
+  },
+  "cua_local": {
+    "description": "CUA Local Sandbox",
+    "type": "bool",
+    "hint": "Prefer local CUA sandbox. Default: true."
+  },
+  "cua_api_key": {
+    "description": "CUA API Key",
+    "type": "string",
+    "hint": "CUA cloud sandbox API key. Also supported via CUA_API_KEY.",
+    "obvious_hint": true
+  }
+}
