@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -39,7 +40,10 @@ class CuaSandboxProvider:
             merged = dict(plugin_cfg)
             merged.update(sandbox_cfg)
             sandbox_cfg = merged
-        return cua_booter.build_cua_booter_kwargs(sandbox_cfg)
+        booter_kwargs = cua_booter.build_cua_booter_kwargs(sandbox_cfg)
+        if not booter_kwargs.get("api_key") and not os.environ.get("CUA_API_KEY"):
+            booter_kwargs["local"] = True
+        return booter_kwargs
 
     def build_connect_info(self, sandbox_name: str, config: dict) -> dict:
         return {

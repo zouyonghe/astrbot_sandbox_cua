@@ -1,40 +1,47 @@
 {
   "cua_image": {
-    "description": "CUA Image",
+    "description": "CUA 镜像",
     "type": "string",
-    "hint": "CUA sandbox image/system type. Default: linux."
+    "default": "linux",
+    "hint": "CUA 沙箱镜像/系统类型。默认值为 linux。"
   },
   "cua_os_type": {
-    "description": "CUA OS Type",
+    "description": "CUA 操作系统类型",
     "type": "string",
     "options": ["linux", "macos", "windows", "android"],
     "labels": ["Linux", "macOS", "Windows", "Android"],
-    "hint": "CUA sandbox operating system type. Default: linux."
+    "default": "linux",
+    "hint": "CUA 沙箱操作系统类型。默认值为 linux。"
   },
   "cua_ttl": {
-    "description": "CUA Sandbox TTL",
+    "description": "CUA 沙箱存活时间",
     "type": "int",
-    "hint": "CUA sandbox lifetime in seconds."
+    "default": 3600,
+    "hint": "CUA 沙箱生存时间，单位为秒。默认值为 3600。"
   },
   "cua_idle_timeout": {
-    "description": "CUA Idle Timeout",
+    "description": "CUA 空闲回收时间",
     "type": "int",
-    "hint": "Seconds before an idle managed CUA sandbox is cleaned up. 0 disables idle cleanup."
+    "default": 0,
+    "hint": "托管的 CUA 沙箱空闲多少秒后自动清理。0 表示不启用空闲回收。"
   },
   "cua_telemetry_enabled": {
-    "description": "CUA Telemetry",
+    "description": "CUA 遥测",
     "type": "bool",
-    "hint": "Allow the CUA SDK to send telemetry. Default: false."
+    "default": false,
+    "hint": "是否允许 CUA SDK 发送遥测数据。默认关闭。"
   },
   "cua_local": {
-    "description": "CUA Local Sandbox",
+    "description": "CUA 本地沙箱",
     "type": "bool",
-    "hint": "Prefer local CUA sandbox. Default: true."
+    "default": true,
+    "hint": "是否优先使用 CUA 本地沙箱。默认开启。关闭后将优先使用云端沙箱，并需要提供 API Key。"
   },
   "cua_api_key": {
     "description": "CUA API Key",
     "type": "string",
-    "hint": "CUA cloud sandbox API key. Also supported via CUA_API_KEY.",
+    "default": "",
+    "hint": "CUA 云端沙箱 API Key。也可以通过 CUA_API_KEY 环境变量提供。",
     "obvious_hint": true
   }
 }
