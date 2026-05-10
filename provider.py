@@ -57,7 +57,7 @@ class CuaSandboxProvider:
         return booter_kwargs
 
     def build_connect_info(self, sandbox_name: str, config: dict) -> dict:
-        persistent_name = config.get("persistent_name")
+        persistent_name = config.get("persistent_name") or sandbox_name
         return {
             "name": sandbox_name,
             "local": config.get("local", True),
@@ -146,7 +146,8 @@ class CuaSandboxProvider:
         return client
 
     async def destroy_booter(self, booter: ComputerBooter, record: dict) -> None:
-        if hasattr(booter, "destroy"):
-            await booter.destroy()
+        destroy = getattr(booter, "destroy", None)
+        if callable(destroy):
+            await destroy()
             return
         await booter.shutdown()

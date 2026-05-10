@@ -716,6 +716,15 @@ def _screenshot_to_bytes(raw: Any) -> bytes:
     raise TypeError(f"Unsupported CUA screenshot result: {type(raw)!r}")
 
 
+def _is_missing_persistent_sandbox_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return (
+        "no local sandbox named" in message
+        or "not found in state files" in message
+        or "not found" in message and "sandbox" in message
+    )
+
+
 @dataclass(slots=True)
 class _CuaRuntime:
     sandbox: Any
@@ -815,6 +824,8 @@ class CuaBooter(ComputerBooter):
                     connect_kwargs["api_key"] = self.api_key
                 return await sandbox_cls.connect(sandbox_name, **connect_kwargs)
             except Exception as exc:
+                if not _is_missing_persistent_sandbox_error(exc):
+                    raise
                 logger.info(
                     "[Computer] CUA persistent sandbox connect failed, falling back to resume/create: name=%s error=%s",
                     sandbox_name,
@@ -826,6 +837,8 @@ class CuaBooter(ComputerBooter):
                         resume_kwargs["api_key"] = self.api_key
                     return await sandbox_cls.resume(sandbox_name, **resume_kwargs)
                 except Exception as resume_exc:
+                    if not _is_missing_persistent_sandbox_error(resume_exc):
+                        raise
                     logger.info(
                         "[Computer] CUA persistent sandbox resume failed, creating new sandbox: name=%s error=%s",
                         sandbox_name,
