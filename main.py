@@ -1,8 +1,9 @@
 from astrbot.api.event import filter
 from astrbot.api.star import Context, Star, register
 from astrbot.core.computer.computer_client import (
+    cleanup_sandbox_provider,
+    detach_sandbox_provider,
     register_sandbox_provider,
-    unregister_sandbox_provider,
 )
 
 from .provider import CuaSandboxProvider
@@ -30,7 +31,8 @@ class CuaSandboxRuntimePlugin(Star):
         )
 
     async def terminate(self) -> None:
-        unregister_sandbox_provider(self.provider.provider_id, force=True)
+        await cleanup_sandbox_provider(self.provider.provider_id)
+        detach_sandbox_provider(self.provider.provider_id)
 
     @filter.command("cua_sandbox_runtime")
     async def runtime_status(self, event):

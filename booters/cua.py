@@ -724,7 +724,6 @@ def _is_missing_persistent_sandbox_error(exc: Exception) -> bool:
             or "not found in state files" in message
             or ("not found" in message and "sandbox" in message)
         )
-    message = str(exc).lower()
     return False
 
 
