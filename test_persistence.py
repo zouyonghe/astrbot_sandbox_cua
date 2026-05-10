@@ -102,6 +102,25 @@ async def test_cua_terminate_detaches_even_if_cleanup_fails(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_cua_terminate_noops_when_provider_missing(monkeypatch):
+    calls = []
+
+    def fake_detach(provider_id):
+        calls.append(("detach", provider_id))
+
+    monkeypatch.setattr(plugin_main, "detach_sandbox_provider", fake_detach)
+
+    plugin = plugin_main.CuaSandboxRuntimePlugin.__new__(
+        plugin_main.CuaSandboxRuntimePlugin
+    )
+    plugin.provider = None
+
+    await plugin.terminate()
+
+    assert calls == []
+
+
+@pytest.mark.asyncio
 async def test_cua_booter_resumes_persistent_runtime_when_resume_enabled(monkeypatch):
     calls = []
 
