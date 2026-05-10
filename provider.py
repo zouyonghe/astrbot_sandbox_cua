@@ -96,7 +96,7 @@ class CuaSandboxProvider:
             **config,
             "persistent": persistent,
             "persistent_name": persistent_name,
-            "resume": bool(config.get("resume", True)),
+            "resume": bool(config.get("resume", False)),
         }
         client = cua_booter.CuaBooter(
             **booter_config,
@@ -113,7 +113,7 @@ class CuaSandboxProvider:
             config.get("ttl"),
             persistent,
             persistent_name,
-            bool(config.get("resume", True)),
+            bool(config.get("resume", False)),
         )
         try:
             await client.boot(uuid_str)
