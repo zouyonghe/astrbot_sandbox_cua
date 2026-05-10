@@ -31,8 +31,10 @@ class CuaSandboxRuntimePlugin(Star):
         )
 
     async def terminate(self) -> None:
-        await cleanup_sandbox_provider(self.provider.provider_id)
-        detach_sandbox_provider(self.provider.provider_id)
+        try:
+            await cleanup_sandbox_provider(self.provider.provider_id)
+        finally:
+            detach_sandbox_provider(self.provider.provider_id)
 
     @filter.command("cua_sandbox_runtime")
     async def runtime_status(self, event):
