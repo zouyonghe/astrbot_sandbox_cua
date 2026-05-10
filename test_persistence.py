@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from data.plugins.astrbot_sandbox_cua import provider as provider_module
+from data.plugins.astrbot_sandbox_cua import main as plugin_main
 from data.plugins.astrbot_sandbox_cua.booters.cua import CuaBooter
 
 
@@ -70,6 +71,53 @@ async def test_cua_booter_uses_persistent_create_and_disconnects_on_shutdown(
         },
     )
     assert calls[1] == ("disconnect", "cua-persistent-1")
+
+
+@pytest.mark.asyncio
+async def test_cua_terminate_detaches_even_if_cleanup_fails(monkeypatch):
+    calls = []
+
+    class FakeProvider:
+        provider_id = "cua"
+
+    async def fake_cleanup(provider_id):
+        calls.append(("cleanup", provider_id))
+        raise RuntimeError("cleanup failed")
+
+    def fake_detach(provider_id):
+        calls.append(("detach", provider_id))
+
+    monkeypatch.setattr(plugin_main, "cleanup_sandbox_provider", fake_cleanup)
+    monkeypatch.setattr(plugin_main, "detach_sandbox_provider", fake_detach)
+
+    plugin = plugin_main.CuaSandboxRuntimePlugin.__new__(
+        plugin_main.CuaSandboxRuntimePlugin
+    )
+    plugin.provider = FakeProvider()
+
+    with pytest.raises(RuntimeError, match="cleanup failed"):
+        await plugin.terminate()
+
+    assert calls == [("cleanup", "cua"), ("detach", "cua")]
+
+
+@pytest.mark.asyncio
+async def test_cua_terminate_noops_when_provider_missing(monkeypatch):
+    calls = []
+
+    def fake_detach(provider_id):
+        calls.append(("detach", provider_id))
+
+    monkeypatch.setattr(plugin_main, "detach_sandbox_provider", fake_detach)
+
+    plugin = plugin_main.CuaSandboxRuntimePlugin.__new__(
+        plugin_main.CuaSandboxRuntimePlugin
+    )
+    plugin.provider = None
+
+    await plugin.terminate()
+
+    assert calls == []
 
 
 @pytest.mark.asyncio
