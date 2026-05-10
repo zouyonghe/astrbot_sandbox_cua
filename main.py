@@ -12,7 +12,7 @@ from .tools import CuaKeyboardTypeTool, CuaMouseClickTool, CuaScreenshotTool
 @register(
     "astrbot_sandbox_cua",
     "AstrBot Team",
-    "CUA sandbox runtime provider for AstrBot",
+    "为 AstrBot 提供 CUA 沙盒运行时。",
     "0.1.0",
 )
 class CuaSandboxRuntimePlugin(Star):
@@ -34,4 +34,4 @@ class CuaSandboxRuntimePlugin(Star):
 
     @filter.command("cua_sandbox_runtime")
     async def runtime_status(self, event):
-        yield event.plain_result("CUA sandbox runtime provider is registered.")
+        yield event.plain_result("CUA 沙盒运行时已注册。")

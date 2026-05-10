@@ -1,5 +1,5 @@
 name: astrbot_sandbox_cua
 author: AstrBot Team
-desc: CUA sandbox runtime provider for AstrBot.
+desc: 为 AstrBot 提供 CUA 沙盒运行时。
 version: 0.1.0
 repo: https://github.com/zouyonghe/astrbot_sandbox_cua
