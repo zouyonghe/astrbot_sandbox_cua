@@ -717,13 +717,15 @@ def _screenshot_to_bytes(raw: Any) -> bytes:
 
 
 def _is_missing_persistent_sandbox_error(exc: Exception) -> bool:
+    if isinstance(exc, ValueError):
+        message = str(exc).lower()
+        return (
+            "no local sandbox named" in message
+            or "not found in state files" in message
+            or ("not found" in message and "sandbox" in message)
+        )
     message = str(exc).lower()
-    return (
-        "no local sandbox named" in message
-        or "not found in state files" in message
-        or "not found" in message
-        and "sandbox" in message
-    )
+    return False
 
 
 @dataclass(slots=True)
@@ -923,7 +925,15 @@ class CuaBooter(ComputerBooter):
         delete_kwargs = {"local": self.local}
         if self.api_key:
             delete_kwargs["api_key"] = self.api_key
-        await Sandbox.delete(sandbox_name, **delete_kwargs)
+
+        if self._runtime is not None:
+            await self.shutdown()
+
+        try:
+            await Sandbox.delete(sandbox_name, **delete_kwargs)
+        except Exception as exc:
+            if not _is_missing_persistent_sandbox_error(exc):
+                raise
         self._runtime = None
 
     async def _close_sandbox(
