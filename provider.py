@@ -81,6 +81,45 @@ class CuaSandboxProvider:
             return 0.0
         return max(timeout, 0.0)
 
+    async def check_persistent_sandbox_exists(self, record: dict) -> bool:
+        try:
+            from cua import Sandbox
+        except ImportError as exc:
+            raise RuntimeError(
+                "CUA sandbox support requires the optional `cua` package. "
+                "Install it with `pip install cua` in the AstrBot environment."
+            ) from exc
+
+        connect_info = dict(record.get("connect_info") or {})
+        sandbox_name = str(
+            connect_info.get("persistent_name")
+            or connect_info.get("name")
+            or record.get("sandbox_id")
+            or ""
+        ).strip()
+        if not sandbox_name:
+            return False
+
+        connect = getattr(Sandbox, "connect", None)
+        if not callable(connect):
+            return True
+
+        connect_kwargs = {"local": connect_info.get("local", True)}
+        api_key = connect_info.get("api_key") or self.plugin_config.get("api_key")
+        if api_key:
+            connect_kwargs["api_key"] = api_key
+        try:
+            sandbox = await connect(sandbox_name, **connect_kwargs)
+        except Exception as exc:
+            if cua_booter._is_missing_persistent_sandbox_error(exc):
+                return False
+            raise
+
+        disconnect = getattr(sandbox, "disconnect", None)
+        if callable(disconnect):
+            await disconnect()
+        return True
+
     async def create_booter(
         self,
         context: Context,
