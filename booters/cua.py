@@ -721,7 +721,8 @@ def _is_missing_persistent_sandbox_error(exc: Exception) -> bool:
     return (
         "no local sandbox named" in message
         or "not found in state files" in message
-        or "not found" in message and "sandbox" in message
+        or "not found" in message
+        and "sandbox" in message
     )
 
 
@@ -819,10 +820,15 @@ class CuaBooter(ComputerBooter):
                     sandbox_name,
                     self.local,
                 )
+                connect = getattr(sandbox_cls, "connect", None)
+                if not callable(connect):
+                    raise ValueError(
+                        f"No local sandbox named '{sandbox_name}' found. Check ~/.cua/sandboxes/ or create it with Sandbox.create()."
+                    )
                 connect_kwargs = {"local": self.local}
                 if self.api_key:
                     connect_kwargs["api_key"] = self.api_key
-                return await sandbox_cls.connect(sandbox_name, **connect_kwargs)
+                return await connect(sandbox_name, **connect_kwargs)
             except Exception as exc:
                 if not _is_missing_persistent_sandbox_error(exc):
                     raise

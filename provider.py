@@ -18,6 +18,7 @@ BootHook = Callable[[Context, str, str, dict], Awaitable[ComputerBooter]]
 class CuaSandboxProvider:
     provider_id = "cua"
     capabilities = {"shell", "python", "filesystem", "screenshot", "mouse", "keyboard"}
+    supports_persistent_reconnect = True
     tool_names = {
         "astrbot_cua_screenshot",
         "astrbot_cua_mouse_click",
