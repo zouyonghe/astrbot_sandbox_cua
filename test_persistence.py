@@ -149,7 +149,9 @@ async def test_cua_provider_passes_persistent_runtime_name_for_persistent_sandbo
         async def shutdown(self):
             return None
 
-    monkeypatch.setattr(provider_module, "cua_booter", SimpleNamespace(CuaBooter=FakeBooter))
+    monkeypatch.setattr(
+        provider_module, "cua_booter", SimpleNamespace(CuaBooter=FakeBooter)
+    )
 
     provider = provider_module.CuaSandboxProvider()
     booter = await provider.create_booter(
@@ -339,3 +341,67 @@ async def test_cua_provider_destroy_booter_ignores_non_callable_destroy():
     await provider.destroy_booter(FakeBooter(), {"retention_policy": "temporary"})
 
     assert shutdown_calls == ["shutdown"]
+
+
+@pytest.mark.asyncio
+async def test_cua_provider_reports_persistent_sandbox_exists(monkeypatch):
+    calls = []
+
+    class FakeSandboxApi:
+        @staticmethod
+        async def connect(name, **kwargs):
+            calls.append((name, kwargs))
+
+            class FakeSandbox:
+                async def disconnect(self):
+                    calls.append(("disconnect", name))
+
+            return FakeSandbox()
+
+    fake_module = SimpleNamespace(Sandbox=FakeSandboxApi)
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "cua":
+            return fake_module
+        return original_import(name, globals, locals, fromlist, level)
+
+    original_import = __import__
+    monkeypatch.setattr("builtins.__import__", fake_import)
+
+    provider = provider_module.CuaSandboxProvider()
+
+    exists = await provider.check_persistent_sandbox_exists(
+        {"connect_info": {"persistent_name": "cua-persistent-1", "local": True}}
+    )
+
+    assert exists is True
+    assert calls == [
+        ("cua-persistent-1", {"local": True}),
+        ("disconnect", "cua-persistent-1"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_cua_provider_reports_missing_persistent_sandbox(monkeypatch):
+    class FakeSandboxApi:
+        @staticmethod
+        async def connect(name, **kwargs):
+            raise ValueError(f"No local sandbox named '{name}' found in state files.")
+
+    fake_module = SimpleNamespace(Sandbox=FakeSandboxApi)
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "cua":
+            return fake_module
+        return original_import(name, globals, locals, fromlist, level)
+
+    original_import = __import__
+    monkeypatch.setattr("builtins.__import__", fake_import)
+
+    provider = provider_module.CuaSandboxProvider()
+
+    exists = await provider.check_persistent_sandbox_exists(
+        {"connect_info": {"persistent_name": "cua-persistent-1", "local": True}}
+    )
+
+    assert exists is False
