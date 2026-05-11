@@ -1,27 +1,24 @@
 # astrbot_sandbox_cua
 
-Chinese version: [`README_cn.md`](./README_cn.md)
+<div align="center">
 
-`astrbot_sandbox_cua` is an AstrBot sandbox runtime plugin built on top of the generic sandbox provider API.
+English ｜ <a href="./README_cn.md">简体中文</a>
 
-It adds the `cua` sandbox provider and registers GUI-oriented tools for screenshot, mouse click, and keyboard typing.
+</div>
 
-## Features
+`astrbot_sandbox_cua` is the CUA sandbox driver plugin for AstrBot. It is designed for Agent workflows that need real computer interaction: shell commands, Python execution, file access, screenshots, mouse clicks, and keyboard input inside a sandbox.
 
-- Provides the `cua` sandbox runtime for AstrBot.
-- Supports shell, Python, and filesystem operations inside the sandbox.
-- Adds GUI-oriented tools for screenshot, mouse click, and keyboard typing.
-- Supports both local-preferred and cloud-backed CUA environments.
-- Supports managed sandbox idle cleanup through `cua_idle_timeout`.
+## Key Features
 
-## Requirements
+1. 🛡️ Provides the `cua` sandbox driver for AstrBot.
+2. 💻 Supports shell, Python, and file operations.
+3. 🖱️ Adds GUI tools for screenshots, mouse clicks, and keyboard input.
+4. ☁️ Supports local-first execution and cloud-backed CUA runtimes.
+5. ♻️ Can recycle idle sandboxes through `cua_idle_timeout`.
 
-- An AstrBot build that supports external sandbox provider plugins.
-- The plugin dependency from `requirements.txt`: `cua-computer`.
-- A compatible CUA runtime environment.
-- A CUA API key if you run with `cua_local=false`.
+## Quick Start
 
-## Installation
+### Install the Plugin
 
 Clone the plugin into AstrBot's plugin directory:
 
@@ -29,11 +26,11 @@ Clone the plugin into AstrBot's plugin directory:
 git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astrbot_sandbox_cua
 ```
 
-Then restart AstrBot or reload plugins.
+Then restart AstrBot, or reload plugins from the plugin management page.
 
-## Configuration
+### Enable the CUA Sandbox Driver
 
-Enable sandbox runtime in AstrBot and select this provider:
+Enable sandbox mode in AstrBot and select the `cua` sandbox driver:
 
 ```json
 {
@@ -46,7 +43,7 @@ Enable sandbox runtime in AstrBot and select this provider:
 }
 ```
 
-Provider-specific options:
+## Configuration
 
 | Key | Description |
 | --- | --- |
@@ -58,15 +55,19 @@ Provider-specific options:
 | `cua_local` | Prefer a local CUA sandbox. |
 | `cua_api_key` | API key for cloud CUA usage. `CUA_API_KEY` is also supported. |
 
-## Usage Notes
+## Best For
 
-- This plugin is best when you need GUI interaction instead of browser-only automation.
-- After the plugin is enabled, AstrBot can mount CUA tools automatically when the active sandbox provider is `cua`.
+- Use this plugin when you need real GUI interaction instead of browser-only automation.
+- After the plugin is enabled, AstrBot mounts CUA tools automatically when the active sandbox driver is `cua`.
 - If you want cloud execution, set `cua_local` to `false` and provide `cua_api_key`.
 - If you want AstrBot to recycle idle managed sandboxes, set `cua_idle_timeout` to a positive value.
 
-## Limitations
+## Requirements and Limitations
 
+- AstrBot must support external sandbox driver plugins.
+- The plugin dependency from `requirements.txt`: `cua-computer`.
+- A compatible CUA runtime environment is required.
+- A CUA API key is required when `cua_local=false`.
 - This plugin depends on the behavior and compatibility of the upstream CUA SDK.
 - GUI capability depends on the selected CUA image and OS type.
 - This plugin does not add browser-specific Bay or Shipyard Neo lifecycle features.
