@@ -2,23 +2,23 @@
 
 英文版说明：[`README.md`](./README.md)
 
-`astrbot_sandbox_cua` 是一个基于 AstrBot 通用 sandbox provider 机制实现的插件。
+`astrbot_sandbox_cua` 是 AstrBot 的 CUA 沙盒驱动插件。
 
-它为 AstrBot 提供 `cua` 运行时，并注册面向 GUI 的截图、鼠标点击、键盘输入工具。
+它适合需要完整电脑操作能力的场景，例如截图、鼠标点击、键盘输入，以及在沙盒里运行 Shell 或 Python。
 
 ## 功能特性
 
-- 为 AstrBot 提供 `cua` 沙箱运行时。
-- 支持沙箱内的 shell、Python、文件系统操作。
-- 提供 GUI 能力相关工具：截图、鼠标点击、键盘输入。
+- 提供 `cua` 沙盒驱动。
+- 支持沙盒内的 Shell、Python 和文件操作。
+- 提供截图、鼠标点击、键盘输入等 GUI 工具。
 - 支持本地优先和云端 CUA 运行模式。
-- 支持通过 `cua_idle_timeout` 回收空闲托管沙箱。
+- 可通过 `cua_idle_timeout` 自动回收空闲沙盒。
 
 ## 依赖要求
 
-- 需要使用已经支持外部 sandbox provider 插件的 AstrBot 版本。
+- 需要使用支持外部沙盒驱动插件的 AstrBot 版本。
 - 依赖 `requirements.txt` 中的 `cua-computer`。
-- 需要可用的 CUA 运行环境。
+- 需要可用的 CUA 环境。
 - 当 `cua_local=false` 时，需要提供 CUA API Key。
 
 ## 安装方式
@@ -33,7 +33,7 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 ## 配置方法
 
-先在 AstrBot 核心配置中启用 sandbox，并把运行时设置为 `cua`：
+先在 AstrBot 核心配置中启用沙盒模式，并把沙盒驱动设置为 `cua`：
 
 ```json
 {
@@ -50,9 +50,9 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 | 键名 | 说明 |
 | --- | --- |
-| `cua_image` | 沙箱镜像或系统类型。 |
+| `cua_image` | 沙盒镜像或系统类型。 |
 | `cua_os_type` | 操作系统类型，例如 `linux`、`macos`、`windows`、`android`。 |
-| `cua_ttl` | 沙箱生命周期，单位秒。 |
+| `cua_ttl` | 沙盒生命周期，单位秒。 |
 | `cua_idle_timeout` | 空闲回收时间，单位秒。`0` 表示不自动回收。 |
 | `cua_telemetry_enabled` | 是否允许 SDK 发送遥测。 |
 | `cua_local` | 是否优先使用本地 CUA 沙箱。 |
@@ -60,10 +60,10 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 ## 使用说明
 
-- 当你需要真正的 GUI 交互，而不是纯浏览器自动化时，优先使用这个插件。
-- 插件启用后，只要当前 sandbox provider 是 `cua`，AstrBot 就可以自动挂载对应的 CUA 工具。
+- 当你需要真实 GUI 操作，而不是单纯的浏览器自动化时，优先使用这个插件。
+- 插件启用后，只要当前沙盒驱动是 `cua`，AstrBot 就会自动挂载对应的 CUA 工具。
 - 如果需要云端运行，请把 `cua_local` 设为 `false`，并提供 `cua_api_key`。
-- 如果希望 AstrBot 自动回收空闲托管沙箱，请把 `cua_idle_timeout` 设置为大于 `0` 的值。
+- 如果希望 AstrBot 自动回收空闲沙盒，请把 `cua_idle_timeout` 设置为大于 `0` 的值。
 
 ## 限制说明
 

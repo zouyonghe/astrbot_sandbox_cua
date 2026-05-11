@@ -56,4 +56,4 @@ class CuaSandboxRuntimePlugin(Star):
 
     @filter.command("cua_sandbox_runtime")
     async def runtime_status(self, event):
-        yield event.plain_result("CUA 沙盒运行时提供器已注册。")
+        yield event.plain_result("CUA 沙盒运行时已注册。")
