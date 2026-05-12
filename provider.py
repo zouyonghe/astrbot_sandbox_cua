@@ -8,11 +8,40 @@ from typing import Any
 
 from astrbot.api import logger
 from astrbot.core.computer.booters.base import ComputerBooter
+from astrbot.core.computer.sandbox_timeouts import resolve_sandbox_timeout
 from astrbot.core.star.context import Context
 
 from .booters import cua as cua_booter
 
 BootHook = Callable[[Context, str, str, dict], Awaitable[ComputerBooter]]
+_CUA_TTL_TIMEOUT_KEY = "sandbox_ttl"
+_CUA_LEGACY_TTL_KEY = "cua_ttl"
+_CUA_TTL_TIMEOUT_ALIASES = (_CUA_LEGACY_TTL_KEY,)
+_CUA_DEFAULT_TTL_SECONDS = 3600
+_CUA_IDLE_TIMEOUT_KEY = "sandbox_idle_timeout"
+_CUA_LEGACY_IDLE_TIMEOUT_KEY = "cua_idle_timeout"
+_CUA_IDLE_TIMEOUT_ALIASES = (_CUA_LEGACY_IDLE_TIMEOUT_KEY,)
+_CUA_DEFAULT_IDLE_TIMEOUT_SECONDS = 0.0
+
+
+def _resolve_cua_ttl(config: Mapping[str, Any]) -> int:
+    return int(
+        resolve_sandbox_timeout(
+            config,
+            _CUA_TTL_TIMEOUT_KEY,
+            aliases=_CUA_TTL_TIMEOUT_ALIASES,
+            default=_CUA_DEFAULT_TTL_SECONDS,
+        )
+    )
+
+
+def _resolve_cua_idle_timeout(config: Mapping[str, Any]) -> float:
+    return resolve_sandbox_timeout(
+        config,
+        _CUA_IDLE_TIMEOUT_KEY,
+        aliases=_CUA_IDLE_TIMEOUT_ALIASES,
+        default=_CUA_DEFAULT_IDLE_TIMEOUT_SECONDS,
+    )
 
 
 class CuaSandboxProvider:
@@ -56,6 +85,11 @@ class CuaSandboxProvider:
 
     def build_create_config(self, context: Context, session_id: str) -> dict:
         sandbox_cfg = self._merged_sandbox_config(context, session_id)
+        sandbox_cfg = {
+            **sandbox_cfg,
+            _CUA_LEGACY_TTL_KEY: _resolve_cua_ttl(sandbox_cfg),
+            _CUA_LEGACY_IDLE_TIMEOUT_KEY: _resolve_cua_idle_timeout(sandbox_cfg),
+        }
         booter_kwargs = cua_booter.build_cua_booter_kwargs(sandbox_cfg)
         if not booter_kwargs.get("api_key") and not os.environ.get("CUA_API_KEY"):
             booter_kwargs["local"] = True
@@ -77,12 +111,7 @@ class CuaSandboxProvider:
 
     def get_idle_timeout(self, context: Context, session_id: str) -> float:
         sandbox_cfg = self._merged_sandbox_config(context, session_id)
-        value = sandbox_cfg.get("cua_idle_timeout", 0)
-        try:
-            timeout = float(value)
-        except (TypeError, ValueError):
-            return 0.0
-        return max(timeout, 0.0)
+        return _resolve_cua_idle_timeout(sandbox_cfg)
 
     async def check_persistent_sandbox_exists(self, record: dict) -> bool:
         try:
