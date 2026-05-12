@@ -3,7 +3,7 @@
     "description": "CUA 镜像",
     "type": "string",
     "default": "linux",
-    "hint": "CUA 沙箱镜像/系统类型。默认值为 linux。"
+    "hint": "CUA 沙箱镜像或系统类型。通常和 `cua_os_type` 配套使用，默认值是 `linux`。"
   },
   "cua_os_type": {
     "description": "CUA 操作系统类型",
@@ -11,25 +11,25 @@
     "options": ["linux", "macos", "windows", "android"],
     "labels": ["Linux", "macOS", "Windows", "Android"],
     "default": "linux",
-    "hint": "CUA 沙箱操作系统类型。默认值为 linux。"
+    "hint": "CUA 沙箱操作系统类型，可选 `linux`、`macos`、`windows`、`android`。默认值是 `linux`。"
   },
   "cua_ttl": {
     "description": "CUA 沙箱存活时间",
     "type": "int",
     "default": 3600,
-    "hint": "CUA 沙箱生存时间，单位为秒。默认值为 3600。"
+    "hint": "CUA 沙箱生存时间，单位为秒。默认值是 `3600`。"
   },
   "cua_idle_timeout": {
     "description": "CUA 空闲回收时间",
     "type": "int",
     "default": 0,
-    "hint": "托管的 CUA 沙箱空闲多少秒后自动清理。0 表示不启用空闲回收。"
+    "hint": "托管的 CUA 沙箱空闲多少秒后自动清理。`0` 表示不启用空闲回收。"
   },
   "cua_telemetry_enabled": {
     "description": "CUA 遥测",
     "type": "bool",
     "default": false,
-    "hint": "是否允许 CUA SDK 发送遥测数据。默认关闭。"
+    "hint": "是否允许上游 CUA SDK 发送匿名使用和诊断数据，用于改进稳定性和兼容性。默认关闭。"
   },
   "cua_local": {
     "description": "CUA 本地沙箱",
@@ -41,7 +41,7 @@
     "description": "CUA API Key",
     "type": "string",
     "default": "",
-    "hint": "CUA 云端沙箱 API Key。也可以通过 CUA_API_KEY 环境变量提供。",
+    "hint": "CUA 云端沙箱 API Key，也可以通过 `CUA_API_KEY` 环境变量提供。",
     "obvious_hint": true
   }
 }

@@ -30,29 +30,23 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 ### 启用 CUA 沙盒驱动
 
-先在 AstrBot 核心配置中启用沙盒模式，并把沙盒驱动设置为 `cua`：
+在 AstrBot 仪表盘中启用沙盒模式，并选择 `cua` 驱动。
 
-```json
-{
-  "provider_settings": {
-    "computer_use_runtime": "sandbox",
-    "sandbox": {
-      "booter": "cua"
-    }
-  }
-}
-```
+对应配置路径：
+
+- `provider_settings.computer_use_runtime`：`sandbox`
+- `provider_settings.sandbox.booter`：`cua`
 
 ## 配置项
 
 | 键名 | 说明 |
 | --- | --- |
-| `cua_image` | 沙盒镜像或系统类型。 |
-| `cua_os_type` | 操作系统类型，例如 `linux`、`macos`、`windows`、`android`。 |
+| `cua_image` | 沙盒镜像或系统类型。通常和 `cua_os_type` 保持一致，除非你明确知道目标运行时需要不同镜像。 |
+| `cua_os_type` | 支持的操作系统类型：`linux`、`macos`、`windows`、`android`。 |
 | `cua_ttl` | 沙盒生命周期，单位秒。 |
 | `cua_idle_timeout` | 空闲回收时间，单位秒。`0` 表示不自动回收。 |
-| `cua_telemetry_enabled` | 是否允许 SDK 发送遥测。 |
-| `cua_local` | 是否优先使用本地 CUA 沙盒。 |
+| `cua_telemetry_enabled` | 是否允许上游 CUA SDK 发送匿名使用和诊断数据，用于改进稳定性和兼容性。 |
+| `cua_local` | 是否优先使用本地 CUA 沙盒。设为 `false` 时改用云端 CUA。 |
 | `cua_api_key` | 云端 CUA 使用的 API Key，也支持环境变量 `CUA_API_KEY`。 |
 
 ## 适合场景
@@ -72,6 +66,8 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 - GUI 能力是否完整可用，取决于所选镜像和 OS 类型。
 - 该插件不提供 Bay / Shipyard Neo 的浏览器技能生命周期能力。
 
-## 仓库地址
+## 排查建议
 
-- GitHub: https://github.com/zouyonghe/astrbot_sandbox_cua
+- 如果云端模式没有启动，请确认 `cua_local=false` 且已经填写 `cua_api_key`。
+- 如果沙盒内 GUI 工具不可用，请确认你选的镜像和 `cua_os_type` 匹配。
+- 如果你更在意隐私，或者不想让运行数据发到上游，请保持 `cua_telemetry_enabled` 关闭。

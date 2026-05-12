@@ -30,29 +30,23 @@ Then restart AstrBot, or reload plugins from the plugin management page.
 
 ### Enable the CUA Sandbox Driver
 
-Enable sandbox mode in AstrBot and select the `cua` sandbox driver:
+In the AstrBot dashboard, enable sandbox mode and select the `cua` driver.
 
-```json
-{
-  "provider_settings": {
-    "computer_use_runtime": "sandbox",
-    "sandbox": {
-      "booter": "cua"
-    }
-  }
-}
-```
+Configuration path:
+
+- `provider_settings.computer_use_runtime`: `sandbox`
+- `provider_settings.sandbox.booter`: `cua`
 
 ## Configuration
 
 | Key | Description |
 | --- | --- |
-| `cua_image` | Sandbox image or system type. |
-| `cua_os_type` | OS type, such as `linux`, `macos`, `windows`, or `android`. |
+| `cua_image` | Sandbox image or system type. Keep it aligned with `cua_os_type` unless you know the target runtime needs a different image. |
+| `cua_os_type` | Supported OS types: `linux`, `macos`, `windows`, `android`. |
 | `cua_ttl` | Sandbox lifetime in seconds. |
 | `cua_idle_timeout` | Idle cleanup timeout in seconds. `0` disables idle cleanup. |
-| `cua_telemetry_enabled` | Enables SDK telemetry when supported. |
-| `cua_local` | Prefer a local CUA sandbox. |
+| `cua_telemetry_enabled` | Allows the upstream CUA SDK to send anonymous usage and diagnostic data to improve stability and compatibility. |
+| `cua_local` | Prefer a local CUA sandbox. Set this to `false` for cloud CUA. |
 | `cua_api_key` | API key for cloud CUA usage. `CUA_API_KEY` is also supported. |
 
 ## Best For
@@ -72,6 +66,8 @@ Enable sandbox mode in AstrBot and select the `cua` sandbox driver:
 - GUI capability depends on the selected CUA image and OS type.
 - This plugin does not add browser-specific Bay or Shipyard Neo lifecycle features.
 
-## Repository
+## Troubleshooting
 
-- GitHub: https://github.com/zouyonghe/astrbot_sandbox_cua
+- If cloud mode does not start, make sure `cua_local=false` and `cua_api_key` are both set.
+- If GUI tools fail inside the sandbox, verify that the selected image matches the requested OS type.
+- If you care about privacy or want to minimize external reporting, keep `cua_telemetry_enabled` disabled.

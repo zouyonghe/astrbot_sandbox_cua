@@ -36,6 +36,10 @@ class CuaSandboxProvider:
         )
         self._boot_hook = boot_hook
 
+    @staticmethod
+    def _persistent_name(config: dict, fallback: str) -> str:
+        return str(config.get("persistent_name") or fallback).strip()
+
     def _merged_sandbox_config(self, context: Context, session_id: str) -> dict:
         """Return sandbox config with plugin_config as base and user settings overriding."""
         config = context.get_config(umo=session_id)
@@ -58,13 +62,12 @@ class CuaSandboxProvider:
         return booter_kwargs
 
     def build_connect_info(self, sandbox_name: str, config: dict) -> dict:
-        persistent_name = config.get("persistent_name") or sandbox_name
         return {
             "name": sandbox_name,
             "local": config.get("local", True),
             "image": config.get("image"),
             "os_type": config.get("os_type"),
-            "persistent_name": persistent_name,
+            "persistent_name": self._persistent_name(config, sandbox_name),
         }
 
     def update_connect_info(self, record: dict, *, sandbox_name: str) -> dict:
@@ -131,7 +134,7 @@ class CuaSandboxProvider:
             return await self._boot_hook(context, session_id, sandbox_id, config)
         uuid_str = uuid.uuid5(uuid.NAMESPACE_DNS, session_id).hex
         persistent = True
-        persistent_name = str(config.get("persistent_name") or sandbox_id).strip()
+        persistent_name = self._persistent_name(config, sandbox_id)
         booter_config = {
             **config,
             "persistent": persistent,
