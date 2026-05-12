@@ -30,18 +30,12 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 ### 启用 CUA 沙盒驱动
 
-先在 AstrBot 核心配置中启用沙盒模式，并把沙盒驱动设置为 `cua`：
+在 AstrBot 仪表盘中启用沙盒模式，并选择 `cua` 驱动。
 
-```json
-{
-  "provider_settings": {
-    "computer_use_runtime": "sandbox",
-    "sandbox": {
-      "booter": "cua"
-    }
-  }
-}
-```
+对应配置路径：
+
+- `provider_settings.computer_use_runtime`：`sandbox`
+- `provider_settings.sandbox.booter`：`cua`
 
 ## 配置项
 
