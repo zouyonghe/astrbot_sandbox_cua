@@ -45,7 +45,7 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 | `cua_os_type` | 支持的操作系统类型：`linux`、`macos`、`windows`、`android`。 |
 | `cua_ttl` | 沙盒生命周期，单位秒。 |
 | `cua_idle_timeout` | 空闲回收时间，单位秒。`0` 表示不自动回收。 |
-| `cua_telemetry_enabled` | 是否允许 SDK 发送遥测。 |
+| `cua_telemetry_enabled` | 是否允许上游 CUA SDK 发送匿名使用和诊断数据，用于改进稳定性和兼容性。 |
 | `cua_local` | 是否优先使用本地 CUA 沙盒。设为 `false` 时改用云端 CUA。 |
 | `cua_api_key` | 云端 CUA 使用的 API Key，也支持环境变量 `CUA_API_KEY`。 |
 
@@ -70,3 +70,4 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 - 如果云端模式没有启动，请确认 `cua_local=false` 且已经填写 `cua_api_key`。
 - 如果沙盒内 GUI 工具不可用，请确认你选的镜像和 `cua_os_type` 匹配。
+- 如果你更在意隐私，或者不想让运行数据发到上游，请保持 `cua_telemetry_enabled` 关闭。

@@ -29,7 +29,7 @@
     "description": "CUA 遥测",
     "type": "bool",
     "default": false,
-    "hint": "是否允许 CUA SDK 发送遥测数据。默认关闭。"
+    "hint": "是否允许上游 CUA SDK 发送匿名使用和诊断数据，用于改进稳定性和兼容性。默认关闭。"
   },
   "cua_local": {
     "description": "CUA 本地沙箱",

@@ -45,7 +45,7 @@ Configuration path:
 | `cua_os_type` | Supported OS types: `linux`, `macos`, `windows`, `android`. |
 | `cua_ttl` | Sandbox lifetime in seconds. |
 | `cua_idle_timeout` | Idle cleanup timeout in seconds. `0` disables idle cleanup. |
-| `cua_telemetry_enabled` | Enables SDK telemetry when supported. |
+| `cua_telemetry_enabled` | Allows the upstream CUA SDK to send anonymous usage and diagnostic data to improve stability and compatibility. |
 | `cua_local` | Prefer a local CUA sandbox. Set this to `false` for cloud CUA. |
 | `cua_api_key` | API key for cloud CUA usage. `CUA_API_KEY` is also supported. |
 
@@ -70,3 +70,4 @@ Configuration path:
 
 - If cloud mode does not start, make sure `cua_local=false` and `cua_api_key` are both set.
 - If GUI tools fail inside the sandbox, verify that the selected image matches the requested OS type.
+- If you care about privacy or want to minimize external reporting, keep `cua_telemetry_enabled` disabled.
