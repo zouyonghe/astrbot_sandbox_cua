@@ -15,10 +15,12 @@ from .booters import cua as cua_booter
 
 BootHook = Callable[[Context, str, str, dict], Awaitable[ComputerBooter]]
 _CUA_TTL_TIMEOUT_KEY = "sandbox_ttl"
-_CUA_TTL_TIMEOUT_ALIASES = ("cua_ttl",)
+_CUA_LEGACY_TTL_KEY = "cua_ttl"
+_CUA_TTL_TIMEOUT_ALIASES = (_CUA_LEGACY_TTL_KEY,)
 _CUA_DEFAULT_TTL_SECONDS = 3600
 _CUA_IDLE_TIMEOUT_KEY = "sandbox_idle_timeout"
-_CUA_IDLE_TIMEOUT_ALIASES = ("cua_idle_timeout",)
+_CUA_LEGACY_IDLE_TIMEOUT_KEY = "cua_idle_timeout"
+_CUA_IDLE_TIMEOUT_ALIASES = (_CUA_LEGACY_IDLE_TIMEOUT_KEY,)
 _CUA_DEFAULT_IDLE_TIMEOUT_SECONDS = 0.0
 
 
@@ -85,8 +87,8 @@ class CuaSandboxProvider:
         sandbox_cfg = self._merged_sandbox_config(context, session_id)
         sandbox_cfg = {
             **sandbox_cfg,
-            "cua_ttl": _resolve_cua_ttl(sandbox_cfg),
-            "cua_idle_timeout": _resolve_cua_idle_timeout(sandbox_cfg),
+            _CUA_LEGACY_TTL_KEY: _resolve_cua_ttl(sandbox_cfg),
+            _CUA_LEGACY_IDLE_TIMEOUT_KEY: _resolve_cua_idle_timeout(sandbox_cfg),
         }
         booter_kwargs = cua_booter.build_cua_booter_kwargs(sandbox_cfg)
         if not booter_kwargs.get("api_key") and not os.environ.get("CUA_API_KEY"):
