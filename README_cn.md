@@ -76,7 +76,3 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 - 如果云端模式没有启动，请确认 `cua_local=false` 且已经填写 `cua_api_key`。
 - 如果沙盒内 GUI 工具不可用，请确认你选的镜像和 `cua_os_type` 匹配。
-
-## 仓库地址
-
-- GitHub: https://github.com/zouyonghe/astrbot_sandbox_cua

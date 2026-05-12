@@ -76,7 +76,3 @@ Enable sandbox mode in AstrBot and select the `cua` sandbox driver:
 
 - If cloud mode does not start, make sure `cua_local=false` and `cua_api_key` are both set.
 - If GUI tools fail inside the sandbox, verify that the selected image matches the requested OS type.
-
-## Repository
-
-- GitHub: https://github.com/zouyonghe/astrbot_sandbox_cua
