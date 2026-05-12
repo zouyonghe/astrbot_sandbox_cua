@@ -47,12 +47,12 @@ Enable sandbox mode in AstrBot and select the `cua` sandbox driver:
 
 | Key | Description |
 | --- | --- |
-| `cua_image` | Sandbox image or system type. |
-| `cua_os_type` | OS type, such as `linux`, `macos`, `windows`, or `android`. |
+| `cua_image` | Sandbox image or system type. Keep it aligned with `cua_os_type` unless you know the target runtime needs a different image. |
+| `cua_os_type` | Supported OS types: `linux`, `macos`, `windows`, `android`. |
 | `cua_ttl` | Sandbox lifetime in seconds. |
 | `cua_idle_timeout` | Idle cleanup timeout in seconds. `0` disables idle cleanup. |
 | `cua_telemetry_enabled` | Enables SDK telemetry when supported. |
-| `cua_local` | Prefer a local CUA sandbox. |
+| `cua_local` | Prefer a local CUA sandbox. Set this to `false` for cloud CUA. |
 | `cua_api_key` | API key for cloud CUA usage. `CUA_API_KEY` is also supported. |
 
 ## Best For
@@ -71,6 +71,11 @@ Enable sandbox mode in AstrBot and select the `cua` sandbox driver:
 - This plugin depends on the behavior and compatibility of the upstream CUA SDK.
 - GUI capability depends on the selected CUA image and OS type.
 - This plugin does not add browser-specific Bay or Shipyard Neo lifecycle features.
+
+## Troubleshooting
+
+- If cloud mode does not start, make sure `cua_local=false` and `cua_api_key` are both set.
+- If GUI tools fail inside the sandbox, verify that the selected image matches the requested OS type.
 
 ## Repository
 

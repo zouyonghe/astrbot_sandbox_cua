@@ -47,12 +47,12 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 
 | 键名 | 说明 |
 | --- | --- |
-| `cua_image` | 沙盒镜像或系统类型。 |
-| `cua_os_type` | 操作系统类型，例如 `linux`、`macos`、`windows`、`android`。 |
+| `cua_image` | 沙盒镜像或系统类型。通常和 `cua_os_type` 保持一致，除非你明确知道目标运行时需要不同镜像。 |
+| `cua_os_type` | 支持的操作系统类型：`linux`、`macos`、`windows`、`android`。 |
 | `cua_ttl` | 沙盒生命周期，单位秒。 |
 | `cua_idle_timeout` | 空闲回收时间，单位秒。`0` 表示不自动回收。 |
 | `cua_telemetry_enabled` | 是否允许 SDK 发送遥测。 |
-| `cua_local` | 是否优先使用本地 CUA 沙盒。 |
+| `cua_local` | 是否优先使用本地 CUA 沙盒。设为 `false` 时改用云端 CUA。 |
 | `cua_api_key` | 云端 CUA 使用的 API Key，也支持环境变量 `CUA_API_KEY`。 |
 
 ## 适合场景
@@ -71,6 +71,11 @@ git clone https://github.com/zouyonghe/astrbot_sandbox_cua.git data/plugins/astr
 - 该插件的可用能力受上游 CUA SDK 兼容性影响。
 - GUI 能力是否完整可用，取决于所选镜像和 OS 类型。
 - 该插件不提供 Bay / Shipyard Neo 的浏览器技能生命周期能力。
+
+## 排查建议
+
+- 如果云端模式没有启动，请确认 `cua_local=false` 且已经填写 `cua_api_key`。
+- 如果沙盒内 GUI 工具不可用，请确认你选的镜像和 `cua_os_type` 匹配。
 
 ## 仓库地址
 
