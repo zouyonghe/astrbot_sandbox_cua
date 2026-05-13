@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import inspect
 import shlex
+import uuid
 from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,7 @@ from .cua_defaults import CUA_CONFIG_KEYS, CUA_DEFAULT_CONFIG
 
 _POSIX_OS_TYPES = {"linux", "darwin", "macos"}
 _MAX_SEARCH_LINE_COLUMNS = 1000
+_BASE64_SHELL_CHUNK_SIZE = 48_000
 
 _CUA_BACKGROUND_LAUNCHER = """
 import subprocess, sys, time
@@ -58,12 +60,35 @@ async def _write_base64_via_shell(
     data: bytes,
 ) -> dict[str, Any]:
     encoded = base64.b64encode(data).decode("ascii")
-    decoder = (
-        "import base64,pathlib,sys; "
-        "pathlib.Path(sys.argv[1]).write_bytes(base64.b64decode(sys.stdin.read()))"
+    target_path = Path(path)
+    encoded_path = target_path.with_name(f".{target_path.name}.{uuid.uuid4().hex}.b64")
+
+    setup_result = await shell.exec(
+        f"mkdir -p {shlex.quote(str(target_path.parent))} && : > {shlex.quote(str(encoded_path))}"
+    )
+    if setup_result.get("stderr"):
+        return setup_result
+
+    for start in range(0, len(encoded), _BASE64_SHELL_CHUNK_SIZE):
+        chunk = encoded[start : start + _BASE64_SHELL_CHUNK_SIZE]
+        append_result = await shell.exec(
+            f"cat <<'EOF' >> {shlex.quote(str(encoded_path))}\n{chunk}\nEOF"
+        )
+        if append_result.get("stderr"):
+            await shell.exec(f"rm -f {shlex.quote(str(encoded_path))}")
+            return append_result
+
+    decoder = "\n".join(
+        [
+            "import base64, pathlib, sys",
+            "encoded_path = pathlib.Path(sys.argv[1])",
+            "target_path = pathlib.Path(sys.argv[2])",
+            "target_path.write_bytes(base64.b64decode(encoded_path.read_text()))",
+            "encoded_path.unlink(missing_ok=True)",
+        ]
     )
     return await shell.exec(
-        f"python3 -c {shlex.quote(decoder)} {shlex.quote(path)} <<'EOF'\n{encoded}\nEOF"
+        f"python3 - <<'PY' {shlex.quote(str(encoded_path))} {shlex.quote(path)}\n{decoder}\nPY"
     )
 
 
