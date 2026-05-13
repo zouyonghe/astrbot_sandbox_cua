@@ -60,6 +60,15 @@ async def _write_base64_via_shell(
     path: str,
     data: bytes,
 ) -> dict[str, Any]:
+    def shell_result_failed(result: dict[str, Any]) -> bool:
+        success = result.get("success")
+        if success is not None:
+            return not bool(success)
+        exit_code = result.get("exit_code")
+        if exit_code is not None:
+            return exit_code != 0
+        return bool(result.get("stderr"))
+
     encoded = base64.b64encode(data).decode("ascii")
     target_path = Path(path)
     encoded_path = target_path.with_name(f".{target_path.name}.{uuid.uuid4().hex}.b64")
@@ -67,7 +76,7 @@ async def _write_base64_via_shell(
     setup_result = await shell.exec(
         f"mkdir -p {shlex.quote(str(target_path.parent))} && : > {shlex.quote(str(encoded_path))}"
     )
-    if setup_result.get("stderr"):
+    if shell_result_failed(setup_result):
         return setup_result
 
     for start in range(0, len(encoded), _BASE64_SHELL_CHUNK_SIZE):
@@ -75,7 +84,7 @@ async def _write_base64_via_shell(
         append_result = await shell.exec(
             f"cat <<'EOF' >> {shlex.quote(str(encoded_path))}\n{chunk}\nEOF"
         )
-        if append_result.get("stderr"):
+        if shell_result_failed(append_result):
             await shell.exec(f"rm -f {shlex.quote(str(encoded_path))}")
             return append_result
 
@@ -93,7 +102,7 @@ async def _write_base64_via_shell(
     decode_result = await shell.exec(
         f"python3 - <<'PY' {shlex.quote(str(encoded_path))} {shlex.quote(path)}\n{decoder}\nPY"
     )
-    if decode_result.get("stderr"):
+    if shell_result_failed(decode_result):
         await shell.exec(f"rm -f {shlex.quote(str(encoded_path))}")
     return decode_result
 

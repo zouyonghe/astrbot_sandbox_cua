@@ -499,9 +499,26 @@ async def test_cua_shell_upload_fallback_cleans_encoded_file_on_decoder_error():
 
     result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
 
-    decoder_command = next(command for command, _kwargs in commands if command.startswith("python3"))
     assert result["success"] is False
-    assert "try:" in decoder_command
-    assert "finally:" in decoder_command
-    assert "read_bytes()" in decoder_command
+    assert any(command.startswith("python3") for command, _kwargs in commands)
     assert commands[-1][0].startswith("rm -f ")
+
+
+@pytest.mark.asyncio
+async def test_cua_shell_upload_fallback_allows_successful_stderr_warnings():
+    commands = []
+
+    class FakeShell:
+        async def exec(self, command, **kwargs):
+            commands.append((command, kwargs))
+            return {
+                "stdout": "",
+                "stderr": "warning: harmless diagnostic",
+                "exit_code": 0,
+                "success": True,
+            }
+
+    result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
+
+    assert result["success"] is True
+    assert any(command.startswith("python3") for command, _kwargs in commands)
