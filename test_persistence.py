@@ -477,9 +477,10 @@ async def test_cua_shell_upload_fallback_chunks_large_payloads(tmp_path):
     assert len(commands) > 2
     assert all(len(command) < 100_000 for command, _kwargs in commands)
     assert commands[0][0].startswith("mkdir -p ")
-    assert commands[-1][0].startswith("python3 - ")
-    assert " <<'PY'" in commands[-1][0]
+    assert any(command.startswith("python3 - ") for command, _kwargs in commands)
+    assert any(" <<'PY'" in command for command, _kwargs in commands)
     assert str(Path(target_path).parent) in commands[0][0]
+    assert commands[-1][0].startswith("rm -f ")
 
 
 @pytest.mark.asyncio
@@ -523,6 +524,7 @@ async def test_cua_shell_upload_fallback_allows_successful_stderr_warnings():
 
     assert result["success"] is True
     assert any(command.startswith("python3") for command, _kwargs in commands)
+    assert commands[-1][0].startswith("rm -f ")
 
 
 @pytest.mark.asyncio
@@ -538,3 +540,4 @@ async def test_cua_shell_upload_fallback_ignores_stderr_without_status_fields():
 
     assert result["stderr"] == "warning: harmless diagnostic"
     assert any(command.startswith("python3") for command, _kwargs in commands)
+    assert commands[-1][0].startswith("rm -f ")
