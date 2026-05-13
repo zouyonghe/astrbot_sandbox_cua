@@ -479,3 +479,29 @@ async def test_cua_shell_upload_fallback_chunks_large_payloads(tmp_path):
     assert commands[0][0].startswith("mkdir -p ")
     assert "python3 - <<'PY'" in commands[-1][0]
     assert str(Path(target_path).parent) in commands[0][0]
+
+
+@pytest.mark.asyncio
+async def test_cua_shell_upload_fallback_cleans_encoded_file_on_decoder_error():
+    commands = []
+
+    class FakeShell:
+        async def exec(self, command, **kwargs):
+            commands.append((command, kwargs))
+            if command.startswith("python3"):
+                return {
+                    "stdout": "",
+                    "stderr": "decode failed",
+                    "exit_code": 1,
+                    "success": False,
+                }
+            return {"stdout": "", "stderr": "", "exit_code": 0, "success": True}
+
+    result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
+
+    decoder_command = next(command for command, _kwargs in commands if command.startswith("python3"))
+    assert result["success"] is False
+    assert "try:" in decoder_command
+    assert "finally:" in decoder_command
+    assert "read_bytes()" in decoder_command
+    assert commands[-1][0].startswith("rm -f ")

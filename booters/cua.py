@@ -21,6 +21,7 @@ from .cua_defaults import CUA_CONFIG_KEYS, CUA_DEFAULT_CONFIG
 
 _POSIX_OS_TYPES = {"linux", "darwin", "macos"}
 _MAX_SEARCH_LINE_COLUMNS = 1000
+# Keep each shell append command comfortably below typical ARG_MAX limits.
 _BASE64_SHELL_CHUNK_SIZE = 48_000
 
 _CUA_BACKGROUND_LAUNCHER = """
@@ -83,13 +84,18 @@ async def _write_base64_via_shell(
             "import base64, pathlib, sys",
             "encoded_path = pathlib.Path(sys.argv[1])",
             "target_path = pathlib.Path(sys.argv[2])",
-            "target_path.write_bytes(base64.b64decode(encoded_path.read_text()))",
-            "encoded_path.unlink(missing_ok=True)",
+            "try:",
+            "    target_path.write_bytes(base64.b64decode(encoded_path.read_bytes()))",
+            "finally:",
+            "    encoded_path.unlink(missing_ok=True)",
         ]
     )
-    return await shell.exec(
+    decode_result = await shell.exec(
         f"python3 - <<'PY' {shlex.quote(str(encoded_path))} {shlex.quote(path)}\n{decoder}\nPY"
     )
+    if decode_result.get("stderr"):
+        await shell.exec(f"rm -f {shlex.quote(str(encoded_path))}")
+    return decode_result
 
 
 @dataclass(slots=True)
