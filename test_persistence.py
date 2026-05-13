@@ -1,11 +1,15 @@
 import uuid
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from data.plugins.astrbot_sandbox_cua import provider as provider_module
 from data.plugins.astrbot_sandbox_cua import main as plugin_main
-from data.plugins.astrbot_sandbox_cua.booters.cua import CuaBooter
+from data.plugins.astrbot_sandbox_cua.booters.cua import (
+    CuaBooter,
+    _write_base64_via_shell,
+)
 
 
 @pytest.mark.asyncio
@@ -453,3 +457,87 @@ async def test_cua_provider_reports_missing_persistent_sandbox(monkeypatch):
     )
 
     assert exists is False
+
+
+@pytest.mark.asyncio
+async def test_cua_shell_upload_fallback_chunks_large_payloads(tmp_path):
+    commands = []
+
+    class FakeShell:
+        async def exec(self, command, **kwargs):
+            commands.append((command, kwargs))
+            return {"stdout": "", "stderr": "", "exit_code": 0, "success": True}
+
+    target_path = "/tmp/uploaded.bin"
+    data = b"a" * 200_000
+
+    result = await _write_base64_via_shell(FakeShell(), target_path, data)
+
+    assert result["success"] is True
+    assert len(commands) > 2
+    assert all(len(command) < 100_000 for command, _kwargs in commands)
+    assert commands[0][0].startswith("mkdir -p ")
+    assert any(command.startswith("python3 - ") for command, _kwargs in commands)
+    assert any(" <<'PY'" in command for command, _kwargs in commands)
+    assert str(Path(target_path).parent) in commands[0][0]
+    assert commands[-1][0].startswith("rm -f ")
+
+
+@pytest.mark.asyncio
+async def test_cua_shell_upload_fallback_cleans_encoded_file_on_decoder_error():
+    commands = []
+
+    class FakeShell:
+        async def exec(self, command, **kwargs):
+            commands.append((command, kwargs))
+            if command.startswith("python3"):
+                return {
+                    "stdout": "",
+                    "stderr": "decode failed",
+                    "exit_code": 1,
+                    "success": False,
+                }
+            return {"stdout": "", "stderr": "", "exit_code": 0, "success": True}
+
+    result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
+
+    assert result["success"] is False
+    assert any(command.startswith("python3") for command, _kwargs in commands)
+    assert commands[-1][0].startswith("rm -f ")
+
+
+@pytest.mark.asyncio
+async def test_cua_shell_upload_fallback_allows_successful_stderr_warnings():
+    commands = []
+
+    class FakeShell:
+        async def exec(self, command, **kwargs):
+            commands.append((command, kwargs))
+            return {
+                "stdout": "",
+                "stderr": "warning: harmless diagnostic",
+                "exit_code": 0,
+                "success": True,
+            }
+
+    result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
+
+    assert result["success"] is True
+    assert any(command.startswith("python3") for command, _kwargs in commands)
+    assert commands[-1][0].startswith("rm -f ")
+
+
+@pytest.mark.asyncio
+async def test_cua_shell_upload_fallback_ignores_stderr_without_status_fields():
+    commands = []
+
+    class FakeShell:
+        async def exec(self, command, **kwargs):
+            commands.append((command, kwargs))
+            return {"stdout": "", "stderr": "warning: harmless diagnostic"}
+
+    result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
+
+    assert result["stderr"] == "warning: harmless diagnostic"
+    assert any(command.startswith("python3") for command, _kwargs in commands)
+    assert commands[-1][0].startswith("rm -f ")
