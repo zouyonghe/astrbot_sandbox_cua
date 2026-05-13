@@ -477,7 +477,8 @@ async def test_cua_shell_upload_fallback_chunks_large_payloads(tmp_path):
     assert len(commands) > 2
     assert all(len(command) < 100_000 for command, _kwargs in commands)
     assert commands[0][0].startswith("mkdir -p ")
-    assert "python3 - <<'PY'" in commands[-1][0]
+    assert commands[-1][0].startswith("python3 - ")
+    assert " <<'PY'" in commands[-1][0]
     assert str(Path(target_path).parent) in commands[0][0]
 
 
@@ -521,4 +522,19 @@ async def test_cua_shell_upload_fallback_allows_successful_stderr_warnings():
     result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
 
     assert result["success"] is True
+    assert any(command.startswith("python3") for command, _kwargs in commands)
+
+
+@pytest.mark.asyncio
+async def test_cua_shell_upload_fallback_ignores_stderr_without_status_fields():
+    commands = []
+
+    class FakeShell:
+        async def exec(self, command, **kwargs):
+            commands.append((command, kwargs))
+            return {"stdout": "", "stderr": "warning: harmless diagnostic"}
+
+    result = await _write_base64_via_shell(FakeShell(), "/tmp/uploaded.bin", b"data")
+
+    assert result["stderr"] == "warning: harmless diagnostic"
     assert any(command.startswith("python3") for command, _kwargs in commands)

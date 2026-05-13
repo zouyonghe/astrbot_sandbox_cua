@@ -67,7 +67,7 @@ async def _write_base64_via_shell(
         exit_code = result.get("exit_code")
         if exit_code is not None:
             return exit_code != 0
-        return bool(result.get("stderr"))
+        return False
 
     encoded = base64.b64encode(data).decode("ascii")
     target_path = Path(path)
@@ -100,7 +100,7 @@ async def _write_base64_via_shell(
         ]
     )
     decode_result = await shell.exec(
-        f"python3 - <<'PY' {shlex.quote(str(encoded_path))} {shlex.quote(path)}\n{decoder}\nPY"
+        f"python3 - {shlex.quote(str(encoded_path))} {shlex.quote(path)} <<'PY'\n{decoder}\nPY"
     )
     if shell_result_failed(decode_result):
         await shell.exec(f"rm -f {shlex.quote(str(encoded_path))}")
