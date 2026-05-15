@@ -375,6 +375,33 @@ async def test_cua_booter_resume_raises_unexpected_connect_error(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_cua_provider_shortens_docker_unavailable_errors(monkeypatch):
+    class FakeBooter:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        async def boot(self, session_id):
+            raise RuntimeError(
+                "[900] Cannot connect to Docker Engine via "
+                "unix:///Users/test/.docker/run/docker.sock"
+            )
+
+        async def shutdown(self):
+            return None
+
+    monkeypatch.setattr(provider_module.cua_booter, "CuaBooter", FakeBooter)
+
+    provider = provider_module.CuaSandboxProvider()
+    context = SimpleNamespace(
+        get_config=lambda umo: {"provider_settings": {"sandbox": {}}}
+    )
+    config = provider.build_create_config(context, "session-a")
+
+    with pytest.raises(RuntimeError, match="^Docker is not installed or not running$"):
+        await provider.create_booter(context, "session-a", "cua-1", config)
+
+
+@pytest.mark.asyncio
 async def test_cua_provider_destroy_booter_ignores_non_callable_destroy():
     shutdown_calls = []
 

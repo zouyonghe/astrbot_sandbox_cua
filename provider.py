@@ -24,6 +24,20 @@ _CUA_IDLE_TIMEOUT_ALIASES = (_CUA_LEGACY_IDLE_TIMEOUT_KEY,)
 _CUA_DEFAULT_IDLE_TIMEOUT_SECONDS = 0.0
 
 
+def _is_docker_unavailable_error(exc: Exception) -> bool:
+    detail = str(exc).lower()
+    return any(
+        marker in detail
+        for marker in (
+            "cannot connect to docker engine",
+            "failed to connect to docker daemon",
+            "docker is not installed or not running",
+            "docker daemon",
+            "docker.sock",
+        )
+    )
+
+
 def _resolve_cua_ttl(config: Mapping[str, Any]) -> int:
     return int(
         resolve_sandbox_timeout(
@@ -190,7 +204,7 @@ class CuaSandboxProvider:
         try:
             await client.boot(uuid_str)
             setattr(client, "sandbox_id", sandbox_id)
-        except Exception:
+        except Exception as exc:
             logger.warning(
                 "[Computer] CUA managed sandbox boot failed: sandbox_id=%s session_id=%s elapsed_ms=%d",
                 sandbox_id,
@@ -206,6 +220,8 @@ class CuaSandboxProvider:
                     session_id,
                     shutdown_error,
                 )
+            if _is_docker_unavailable_error(exc):
+                raise RuntimeError("Docker is not installed or not running") from exc
             raise
         logger.info(
             "[Computer] CUA managed sandbox boot done: sandbox_id=%s session_id=%s elapsed_ms=%d persistent=%s persistent_name=%s",
