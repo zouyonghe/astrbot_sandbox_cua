@@ -397,8 +397,20 @@ async def test_cua_provider_shortens_docker_unavailable_errors(monkeypatch):
     )
     config = provider.build_create_config(context, "session-a")
 
-    with pytest.raises(RuntimeError, match="^Docker is not installed or not running$"):
+    with pytest.raises(
+        RuntimeError, match="^Docker is not installed or not running$"
+    ) as excinfo:
         await provider.create_booter(context, "session-a", "cua-1", config)
+
+    cause = excinfo.value.__cause__
+    assert isinstance(cause, RuntimeError)
+    assert "Cannot connect to Docker Engine via" in str(cause)
+
+
+def test_cua_provider_does_not_overmatch_docker_errors():
+    assert not provider_module._is_docker_unavailable_error(
+        RuntimeError("Failed to create Docker network using /var/run/docker.sock")
+    )
 
 
 @pytest.mark.asyncio
