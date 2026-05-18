@@ -137,9 +137,9 @@ class CuaSandboxProvider:
             from cua_sandbox import sandbox_state
         except ImportError:
             return persistent_name
-        if sandbox_state.load(persistent_name) is None and sandbox_state.load(
-            sandbox_id
-        ):
+        persistent_state = sandbox_state.load(persistent_name)
+        sandbox_id_state = sandbox_state.load(sandbox_id)
+        if persistent_state is None and sandbox_id_state is not None:
             return sandbox_id
         return persistent_name
 
