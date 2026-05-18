@@ -472,6 +472,51 @@ async def test_cua_booter_resume_raises_unexpected_connect_error(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_cua_booter_resume_does_not_create_when_persistent_sandbox_missing(
+    monkeypatch,
+):
+    class FakeImage:
+        @staticmethod
+        def linux():
+            return "linux-image"
+
+    class FakeSandboxApi:
+        @staticmethod
+        async def connect(name, **kwargs):
+            raise ValueError(f"No local sandbox named '{name}' found in state files.")
+
+        @staticmethod
+        async def resume(name, **kwargs):
+            raise ValueError(f"No local sandbox named '{name}' found in state files.")
+
+        @staticmethod
+        async def create(*args, **kwargs):
+            raise AssertionError("resume path must not create a new sandbox")
+
+    fake_module = SimpleNamespace(Image=FakeImage, Sandbox=FakeSandboxApi)
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "cua":
+            return fake_module
+        return original_import(name, globals, locals, fromlist, level)
+
+    original_import = __import__
+    monkeypatch.setattr("builtins.__import__", fake_import)
+
+    booter = CuaBooter(
+        image="linux",
+        os_type="linux",
+        local=True,
+        persistent_name="cua-persistent-1",
+        persistent=True,
+        resume=True,
+    )
+
+    with pytest.raises(RuntimeError, match="could not be resumed"):
+        await booter.boot("ignored-session")
+
+
+@pytest.mark.asyncio
 async def test_cua_provider_shortens_docker_unavailable_errors(monkeypatch):
     class FakeBooter:
         def __init__(self, **kwargs):

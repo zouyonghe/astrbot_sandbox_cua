@@ -878,7 +878,7 @@ class CuaBooter(ComputerBooter):
                 if not _is_missing_persistent_sandbox_error(exc):
                     raise
                 logger.info(
-                    "[Computer] CUA persistent sandbox connect failed, falling back to resume/create: name=%s error=%s",
+                    "[Computer] CUA persistent sandbox connect failed, falling back to resume: name=%s error=%s",
                     sandbox_name,
                     exc,
                 )
@@ -890,11 +890,9 @@ class CuaBooter(ComputerBooter):
                 except Exception as resume_exc:
                     if not _is_missing_persistent_sandbox_error(resume_exc):
                         raise
-                    logger.info(
-                        "[Computer] CUA persistent sandbox resume failed, creating new sandbox: name=%s error=%s",
-                        sandbox_name,
-                        resume_exc,
-                    )
+                    raise RuntimeError(
+                        f"CUA persistent sandbox {sandbox_name!r} could not be resumed"
+                    ) from resume_exc
 
         image_obj = self._build_image(image_cls)
         create_kwargs = self._build_persistent_create_kwargs(sandbox_cls.create)
