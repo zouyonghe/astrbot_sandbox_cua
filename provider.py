@@ -152,6 +152,14 @@ class CuaSandboxProvider:
         api_key = connect_info.get("api_key") or self.plugin_config.get("api_key")
         if api_key:
             connect_kwargs["api_key"] = api_key
+        if connect_kwargs["local"]:
+            try:
+                from cua_sandbox import sandbox_state
+            except ImportError:
+                pass
+            else:
+                if sandbox_state.load(sandbox_name) is not None:
+                    return True
         try:
             sandbox = await connect(sandbox_name, **connect_kwargs)
         except Exception as exc:

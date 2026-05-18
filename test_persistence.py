@@ -545,6 +545,42 @@ async def test_cua_provider_checks_resume_before_reporting_missing_persistent_sa
 
 
 @pytest.mark.asyncio
+async def test_cua_provider_preserves_local_state_even_when_connect_is_not_ready(
+    monkeypatch,
+):
+    class FakeSandboxState:
+        @staticmethod
+        def load(name):
+            return {"name": name, "status": "running"}
+
+    class FakeSandboxApi:
+        @staticmethod
+        async def connect(name, **kwargs):
+            raise AssertionError("state existence should avoid readiness checks")
+
+    fake_cua_module = SimpleNamespace(Sandbox=FakeSandboxApi)
+    fake_state_module = SimpleNamespace(sandbox_state=FakeSandboxState)
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "cua":
+            return fake_cua_module
+        if name == "cua_sandbox":
+            return fake_state_module
+        return original_import(name, globals, locals, fromlist, level)
+
+    original_import = __import__
+    monkeypatch.setattr("builtins.__import__", fake_import)
+
+    provider = provider_module.CuaSandboxProvider()
+
+    exists = await provider.check_persistent_sandbox_exists(
+        {"connect_info": {"persistent_name": "cua-persistent-1", "local": True}}
+    )
+
+    assert exists is True
+
+
+@pytest.mark.asyncio
 async def test_cua_shell_upload_fallback_chunks_large_payloads(tmp_path):
     commands = []
 
