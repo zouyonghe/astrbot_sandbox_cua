@@ -492,3 +492,49 @@ async def test_cua_provider_reports_missing_persistent_sandbox(monkeypatch):
     )
 
     assert exists is False
+
+
+@pytest.mark.asyncio
+async def test_cua_provider_checks_resume_before_reporting_missing_persistent_sandbox(
+    monkeypatch,
+):
+    calls = []
+
+    class FakeSandboxApi:
+        @staticmethod
+        async def connect(name, **kwargs):
+            calls.append(("connect", name, kwargs))
+            raise ValueError(f"No local sandbox named '{name}' found in state files.")
+
+        @staticmethod
+        async def resume(name, **kwargs):
+            calls.append(("resume", name, kwargs))
+
+            class FakeSandbox:
+                async def disconnect(self):
+                    calls.append(("disconnect", name))
+
+            return FakeSandbox()
+
+    fake_module = SimpleNamespace(Sandbox=FakeSandboxApi)
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "cua":
+            return fake_module
+        return original_import(name, globals, locals, fromlist, level)
+
+    original_import = __import__
+    monkeypatch.setattr("builtins.__import__", fake_import)
+
+    provider = provider_module.CuaSandboxProvider()
+
+    exists = await provider.check_persistent_sandbox_exists(
+        {"connect_info": {"persistent_name": "cua-persistent-1", "local": True}}
+    )
+
+    assert exists is True
+    assert calls == [
+        ("connect", "cua-persistent-1", {"local": True}),
+        ("resume", "cua-persistent-1", {"local": True}),
+        ("disconnect", "cua-persistent-1"),
+    ]

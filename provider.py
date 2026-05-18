@@ -155,7 +155,20 @@ class CuaSandboxProvider:
             sandbox = await connect(sandbox_name, **connect_kwargs)
         except Exception as exc:
             if cua_booter._is_missing_persistent_sandbox_error(exc):
-                return False
+                resume = getattr(Sandbox, "resume", None)
+                if not callable(resume):
+                    return False
+                try:
+                    sandbox = await resume(sandbox_name, **connect_kwargs)
+                except Exception as resume_exc:
+                    if cua_booter._is_missing_persistent_sandbox_error(resume_exc):
+                        return False
+                    raise
+                else:
+                    disconnect = getattr(sandbox, "disconnect", None)
+                    if callable(disconnect):
+                        await disconnect()
+                    return True
             raise
 
         disconnect = getattr(sandbox, "disconnect", None)
