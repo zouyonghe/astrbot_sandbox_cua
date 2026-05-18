@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import inspect
 import shlex
+import uuid
 from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,8 @@ from .cua_defaults import CUA_CONFIG_KEYS, CUA_DEFAULT_CONFIG
 
 _POSIX_OS_TYPES = {"linux", "darwin", "macos"}
 _MAX_SEARCH_LINE_COLUMNS = 1000
+# Keep each shell append command comfortably below typical ARG_MAX limits.
+_BASE64_SHELL_CHUNK_SIZE = 48_000
 
 _CUA_BACKGROUND_LAUNCHER = """
 import subprocess, sys, time
@@ -45,6 +48,24 @@ async def _maybe_await(value: Any) -> Any:
     return value
 
 
+def _shell_result_failed(result: dict[str, Any]) -> bool:
+    success = result.get("success")
+    if success is not None:
+        return not bool(success)
+    exit_code = result.get("exit_code")
+    if exit_code is not None:
+        return exit_code != 0
+    return False
+
+
+async def _cleanup_encoded_file(
+    shell: ShellComponent,
+    encoded_path: Path,
+) -> None:
+    # Best-effort cleanup; encoded_path may already be gone if the decoder succeeded.
+    await shell.exec(f"rm -f {shlex.quote(str(encoded_path))}")
+
+
 def build_cua_booter_kwargs(sandbox_cfg: dict[str, Any]) -> dict[str, Any]:
     return {
         name: sandbox_cfg.get(config_key, CUA_DEFAULT_CONFIG[name])
@@ -58,13 +79,36 @@ async def _write_base64_via_shell(
     data: bytes,
 ) -> dict[str, Any]:
     encoded = base64.b64encode(data).decode("ascii")
-    decoder = (
-        "import base64,pathlib,sys; "
-        "pathlib.Path(sys.argv[1]).write_bytes(base64.b64decode(sys.stdin.read()))"
-    )
-    return await shell.exec(
-        f"python3 -c {shlex.quote(decoder)} {shlex.quote(path)} <<'EOF'\n{encoded}\nEOF"
-    )
+    target_path = Path(path)
+    encoded_path = target_path.with_name(f".{target_path.name}.{uuid.uuid4().hex}.b64")
+    try:
+        setup_result = await shell.exec(
+            f"mkdir -p {shlex.quote(str(target_path.parent))} && : > {shlex.quote(str(encoded_path))}"
+        )
+        if _shell_result_failed(setup_result):
+            return setup_result
+
+        for start in range(0, len(encoded), _BASE64_SHELL_CHUNK_SIZE):
+            chunk = encoded[start : start + _BASE64_SHELL_CHUNK_SIZE]
+            append_result = await shell.exec(
+                f"cat <<'EOF' >> {shlex.quote(str(encoded_path))}\n{chunk}\nEOF"
+            )
+            if _shell_result_failed(append_result):
+                return append_result
+
+        decoder = "\n".join(
+            [
+                "import base64, pathlib, sys",
+                "encoded_path = pathlib.Path(sys.argv[1])",
+                "target_path = pathlib.Path(sys.argv[2])",
+                "target_path.write_bytes(base64.b64decode(encoded_path.read_bytes()))",
+            ]
+        )
+        return await shell.exec(
+            f"python3 - {shlex.quote(str(encoded_path))} {shlex.quote(path)} <<'PY'\n{decoder}\nPY"
+        )
+    finally:
+        await _cleanup_encoded_file(shell, encoded_path)
 
 
 @dataclass(slots=True)
