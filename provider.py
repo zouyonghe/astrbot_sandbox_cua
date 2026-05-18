@@ -118,6 +118,10 @@ class CuaSandboxProvider:
     def update_connect_info(self, record: dict, *, sandbox_name: str) -> dict:
         connect_info = dict(record.get("connect_info") or {})
         connect_info["name"] = sandbox_name
+        connect_info.setdefault(
+            "persistent_name",
+            str(record.get("sandbox_id") or sandbox_name).strip(),
+        )
         return connect_info
 
     def get_idle_timeout(self, context: Context, session_id: str) -> float:

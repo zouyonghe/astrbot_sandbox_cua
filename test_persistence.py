@@ -228,6 +228,35 @@ async def test_cua_provider_passes_persistent_runtime_name_for_persistent_sandbo
     assert getattr(booter, "sandbox_id") == "cua-123"
 
 
+def test_cua_provider_update_connect_info_preserves_persistent_name():
+    provider = provider_module.CuaSandboxProvider()
+    record = {
+        "sandbox_id": "cua-123",
+        "connect_info": {
+            "name": "old-display-name",
+            "persistent_name": "cua-runtime-1",
+        },
+    }
+
+    updated = provider.update_connect_info(record, sandbox_name="new-display-name")
+
+    assert updated["name"] == "new-display-name"
+    assert updated["persistent_name"] == "cua-runtime-1"
+
+
+def test_cua_provider_update_connect_info_adds_missing_persistent_name_from_sandbox_id():
+    provider = provider_module.CuaSandboxProvider()
+    record = {
+        "sandbox_id": "cua-runtime-1",
+        "connect_info": {"name": "old-display-name"},
+    }
+
+    updated = provider.update_connect_info(record, sandbox_name="new-display-name")
+
+    assert updated["name"] == "new-display-name"
+    assert updated["persistent_name"] == "cua-runtime-1"
+
+
 @pytest.mark.asyncio
 async def test_cua_booter_destroy_disconnects_before_delete(monkeypatch):
     calls = []
