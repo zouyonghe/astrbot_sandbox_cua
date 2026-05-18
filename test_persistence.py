@@ -228,6 +228,18 @@ async def test_cua_provider_passes_persistent_runtime_name_for_persistent_sandbo
     assert getattr(booter, "sandbox_id") == "cua-123"
 
 
+def test_cua_provider_build_connect_info_uses_sandbox_id_for_persistent_name():
+    provider = provider_module.CuaSandboxProvider()
+
+    info = provider.build_connect_info(
+        "display-name",
+        {"sandbox_id": "cua-runtime-1", "local": True},
+    )
+
+    assert info["name"] == "display-name"
+    assert info["persistent_name"] == "cua-runtime-1"
+
+
 def test_cua_provider_update_connect_info_preserves_persistent_name():
     provider = provider_module.CuaSandboxProvider()
     record = {
@@ -255,6 +267,58 @@ def test_cua_provider_update_connect_info_adds_missing_persistent_name_from_sand
 
     assert updated["name"] == "new-display-name"
     assert updated["persistent_name"] == "cua-runtime-1"
+
+
+@pytest.mark.asyncio
+async def test_cua_provider_resume_repairs_legacy_display_name_persistent_name(
+    monkeypatch,
+):
+    recorded = {}
+
+    class FakeBooter:
+        def __init__(self, **kwargs):
+            recorded.update(kwargs)
+
+        async def boot(self, session_id: str):
+            recorded["boot_session_id"] = session_id
+
+        async def shutdown(self):
+            return None
+
+    class FakeSandboxState:
+        @staticmethod
+        def load(name):
+            if name == "cua-123":
+                return {"name": name, "status": "running"}
+            return None
+
+    fake_state_module = SimpleNamespace(sandbox_state=FakeSandboxState)
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "cua_sandbox":
+            return fake_state_module
+        return original_import(name, globals, locals, fromlist, level)
+
+    original_import = __import__
+    monkeypatch.setattr("builtins.__import__", fake_import)
+    monkeypatch.setattr(
+        provider_module, "cua_booter", SimpleNamespace(CuaBooter=FakeBooter)
+    )
+
+    provider = provider_module.CuaSandboxProvider()
+    await provider.create_booter(
+        context=object(),
+        session_id="dashboard",
+        sandbox_id="cua-123",
+        config={
+            "local": True,
+            "persistent_name": "display-name",
+            "resume": True,
+        },
+    )
+
+    assert recorded["persistent_name"] == "cua-123"
+    assert recorded["resume"] is True
 
 
 @pytest.mark.asyncio

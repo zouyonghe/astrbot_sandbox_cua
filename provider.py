@@ -112,7 +112,10 @@ class CuaSandboxProvider:
             "local": config.get("local", True),
             "image": config.get("image"),
             "os_type": config.get("os_type"),
-            "persistent_name": self._persistent_name(config, sandbox_name),
+            "persistent_name": self._persistent_name(
+                config,
+                str(config.get("sandbox_id") or sandbox_name),
+            ),
         }
 
     def update_connect_info(self, record: dict, *, sandbox_name: str) -> dict:
@@ -123,6 +126,22 @@ class CuaSandboxProvider:
             str(record.get("sandbox_id") or sandbox_name).strip(),
         )
         return connect_info
+
+    def _resolve_create_persistent_name(self, config: dict, sandbox_id: str) -> str:
+        persistent_name = self._persistent_name(config, sandbox_id)
+        if not config.get("resume") or not config.get("local", True):
+            return persistent_name
+        if persistent_name == sandbox_id:
+            return persistent_name
+        try:
+            from cua_sandbox import sandbox_state
+        except ImportError:
+            return persistent_name
+        if sandbox_state.load(persistent_name) is None and sandbox_state.load(
+            sandbox_id
+        ):
+            return sandbox_id
+        return persistent_name
 
     def get_idle_timeout(self, context: Context, session_id: str) -> float:
         sandbox_cfg = self._merged_sandbox_config(context, session_id)
@@ -199,7 +218,7 @@ class CuaSandboxProvider:
             return await self._boot_hook(context, session_id, sandbox_id, config)
         uuid_str = uuid.uuid5(uuid.NAMESPACE_DNS, session_id).hex
         persistent = True
-        persistent_name = self._persistent_name(config, sandbox_id)
+        persistent_name = self._resolve_create_persistent_name(config, sandbox_id)
         booter_config = {
             **config,
             "persistent": persistent,
