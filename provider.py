@@ -59,7 +59,6 @@ class CuaSandboxProvider:
     provider_id = "cua"
     capabilities = {"shell", "python", "filesystem", "screenshot", "mouse", "keyboard"}
     supports_persistent_reconnect = True
-    default_retention_policy = "persistent"
     tool_names = {
         "astrbot_cua_screenshot",
         "astrbot_cua_mouse_click",
